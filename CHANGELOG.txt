@@ -1,0 +1,264 @@
+================================================================================
+  SMART CITY CONSOLE PROJECT — FULL CHANGE LOG
+  Author: Antigravity AI Assistant
+  Date:   2026-10-30
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+SESSION 1 — FORMATTING FIX
+────────────────────────────────────────────────────────────────────────────────
+
+FILE: src/drone/SurveillanceDrone.java
+  BEFORE (line 2): Entire class on one line (minified).
+  AFTER:           Reformatted to standard multi-line Java style.
+  CHANGE TYPE:     Formatting / Readability
+
+────────────────────────────────────────────────────────────────────────────────
+SESSION 2 — BUG FIX
+────────────────────────────────────────────────────────────────────────────────
+
+FILE: src/waste/WasteManager.java
+  BEFORE (line 5): if(items.isEmpty()) System.out.println("No waste collected.");
+                   for(Waste w : items) ...   // runs even when list is empty!
+                   items.clear();             // runs even when list is empty!
+  AFTER  (line 31-37):
+                   if (items.isEmpty()) {
+                       System.out.println("No waste collected.");
+                   } else {
+                       for (Waste w : items) ...
+                       items.clear();
+                   }
+  CHANGE TYPE:     Bug Fix — Logic error (missing else branch)
+  REASON:          The original code had no else, so items.clear() and the
+                   for-loop executed unconditionally after the isEmpty check,
+                   even when the list was empty.
+
+────────────────────────────────────────────────────────────────────────────────
+SESSION 3 — DESIGN IMPROVEMENTS + FULL REFORMAT
+────────────────────────────────────────────────────────────────────────────────
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  PACKAGE: energy                                                             │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+FILE: src/energy/EnergySource.java  [NEW FILE — CREATED]
+  CHANGE:  New abstract base class EnergySource added.
+  REASON:  SolarEnergy and WindEnergy need a proper common parent.
+           Provides getUnits(), setUnits(), and abstract getSourceName().
+
+FILE: src/energy/SolarEnergy.java
+  BEFORE (line 2): public class SolarEnergy { private double units; ... }
+                   — Standalone class, no parent.
+  AFTER:           public class SolarEnergy extends EnergySource { ... }
+                   — Now correctly extends EnergySource.
+  CHANGE TYPE:     Design Fix — Inheritance restructure
+  REASON:          SolarEnergy had no logical base class. It now inherits from
+                   EnergySource, which centralises unit management.
+
+FILE: src/energy/WindEnergy.java
+  BEFORE (line 2): public class WindEnergy extends SolarEnergy { ... }
+                   — Wind energy was inheriting from Solar energy (wrong!).
+  AFTER:           public class WindEnergy extends EnergySource { ... }
+                   — Now correctly extends EnergySource.
+  CHANGE TYPE:     Design Fix — Wrong inheritance (critical)
+  REASON:          Wind energy is NOT a type of solar energy. Extending
+                   SolarEnergy violated the IS-A principle of OOP.
+                   WindEnergy now has its own identity as an EnergySource.
+
+FILE: src/energy/EnergySystem.java
+  BEFORE (line 4): private double solar = 120.5, wind = 80.0;
+                   — Used raw primitive doubles; SolarEnergy/WindEnergy
+                     objects were declared in the project but never used.
+  AFTER  (line 8-9):
+                   private final SolarEnergy solar = new SolarEnergy(120.5);
+                   private final WindEnergy  wind  = new WindEnergy(80.0);
+  CHANGE TYPE:     Design Fix — Unused classes now properly utilised
+  REASON:          The energy objects serve no purpose if EnergySystem ignores
+                   them. Now calls solar.getUnits() and wind.getUnits(),
+                   making the design consistent and extensible.
+  ALSO:            Full reformat from one-liner to multi-line style.
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  PACKAGE: home                                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+FILE: src/home/SmartDevice.java
+  BEFORE (line 2): protected boolean on;
+                   — Field was protected; subclasses accessed it directly.
+  AFTER  (line 5-6):
+                   private boolean on;
+                   public boolean isOn() { return on; }
+  CHANGE TYPE:     Encapsulation Fix
+  REASON:          Protected fields break encapsulation. Subclasses should
+                   only access state through methods (isOn()), not directly.
+  ALSO:            Full reformat from one-liner to multi-line style.
+
+FILE: src/home/SmartLight.java
+  BEFORE: (on ? "ON" : "OFF")   — accessed field 'on' directly.
+  AFTER:  (isOn() ? "ON" : "OFF") — uses the proper getter.
+  CHANGE TYPE:     Encapsulation Fix (follows SmartDevice change)
+  ALSO:            Full reformat.
+
+FILE: src/home/SmartFan.java
+  BEFORE: (on ? "ON" : "OFF")   — accessed field 'on' directly.
+  AFTER:  (isOn() ? "ON" : "OFF") — uses the proper getter.
+  CHANGE TYPE:     Encapsulation Fix (follows SmartDevice change)
+  ALSO:            Full reformat.
+
+FILE: src/home/SecurityCamera.java
+  BEFORE: (on ? "RECORDING" : "OFF")   — accessed field 'on' directly.
+  AFTER:  (isOn() ? "RECORDING" : "OFF") — uses the proper getter.
+  CHANGE TYPE:     Encapsulation Fix (follows SmartDevice change)
+  ALSO:            Full reformat.
+
+FILE: src/home/SmartHome.java
+  CHANGE TYPE:     Formatting only — Full reformat from one-liner to multi-line.
+
+FILE: src/home/DeviceControl.java
+  CHANGE TYPE:     Formatting only — Full reformat from one-liner to multi-line.
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  PACKAGE: waste                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+FILE: src/waste/WasteManager.java
+  BEFORE (line 3): private final ArrayList<Waste> items = new ArrayList<Waste>();
+  AFTER  (line 8): private final List<Waste> items = new ArrayList<>();
+  CHANGE TYPE:     Best Practice — Program to interface, not implementation.
+                   Also switched to diamond operator (<>) for brevity.
+  REASON:          Using the List<T> interface type allows the implementation
+                   to be swapped later (e.g., LinkedList) without changing
+                   any other code.
+  ALSO:            Full reformat. Bug fix (else branch) already applied in
+                   Session 2 is preserved here.
+
+FILE: src/waste/Waste.java
+  CHANGE TYPE:     Formatting only — Full reformat from one-liner to multi-line.
+
+FILE: src/waste/OrganicWaste.java
+  CHANGE TYPE:     Formatting only — Full reformat from one-liner to multi-line.
+
+FILE: src/waste/RecyclableWaste.java
+  CHANGE TYPE:     Formatting only — Full reformat from one-liner to multi-line.
+
+FILE: src/waste/WasteOverflowException.java
+  CHANGE TYPE:     Formatting only — Full reformat from one-liner to multi-line.
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  PACKAGE: weather                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+FILE: src/weather/WeatherMonitor.java
+  BEFORE (line 3): WeatherSensor a=new TemperatureSensor(), b=new RainSensor(),
+                   c=new HumiditySensor();
+                   a.start(); b.start(); c.start();
+                   try { a.join(1700); b.join(2100); c.join(2500); }
+                   — Three separate variables, three different arbitrary timeouts,
+                     single catch block for all three joins.
+  AFTER  (line 11-20):
+                   WeatherSensor[] sensors = { new TemperatureSensor(),
+                       new RainSensor(), new HumiditySensor() };
+                   for (WeatherSensor s : sensors) s.start();
+                   for (WeatherSensor s : sensors) {
+                       try { s.join(2000); }
+                       catch (InterruptedException e) { ... return; }
+                   }
+  CHANGE TYPE:     Improvement — Cleaner loop structure; consistent timeout;
+                   each join individually protected from interruption.
+  REASON:          Original code used 3 different timeouts (1700/2100/2500)
+                   with no clear rationale. A single try/catch for all joins
+                   meant if the first join was interrupted, the others were
+                   silently skipped. The loop structure fixes this.
+
+FILE: src/weather/WeatherSensor.java
+  CHANGE TYPE:     Formatting only — Full reformat from one-liner to multi-line.
+
+FILE: src/weather/TemperatureSensor.java
+  CHANGE TYPE:     Formatting only — Full reformat from one-liner to multi-line.
+
+FILE: src/weather/HumiditySensor.java
+  CHANGE TYPE:     Formatting only — Full reformat from one-liner to multi-line.
+
+FILE: src/weather/RainSensor.java
+  CHANGE TYPE:     Formatting only — Full reformat from one-liner to multi-line.
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  PACKAGE: emergency                                                          │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+FILE: src/emergency/EmergencyManager.java
+  CHANGE TYPE:     Formatting + minor structure improvement.
+  DETAIL:          Separated NumberFormatException and InterruptedException into
+                   distinct catch blocks for clarity. Aligned if/else-if chain
+                   vertically for easier reading.
+
+FILE: src/emergency/Emergency.java
+  CHANGE TYPE:     Formatting only — Full reformat from one-liner to multi-line.
+
+FILE: src/emergency/FireEmergency.java
+  CHANGE TYPE:     Formatting only — Full reformat from one-liner to multi-line.
+
+FILE: src/emergency/MedicalEmergency.java
+  CHANGE TYPE:     Formatting only — Full reformat from one-liner to multi-line.
+
+FILE: src/emergency/AccidentEmergency.java
+  CHANGE TYPE:     Formatting only — Full reformat from one-liner to multi-line.
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  PACKAGE: drone                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+FILE: src/drone/Drone.java
+  CHANGE TYPE:     Formatting only — Full reformat from one-liner to multi-line.
+
+FILE: src/drone/SurveillanceDrone.java
+  (Already reformatted in Session 1 — no further changes needed.)
+
+FILE: src/drone/DeliveryDrone.java
+  CHANGE TYPE:     Formatting only — Full reformat from one-liner to multi-line.
+
+FILE: src/drone/EmergencyDrone.java
+  CHANGE TYPE:     Formatting only — Full reformat from one-liner to multi-line.
+
+FILE: src/drone/DroneManager.java
+  CHANGE TYPE:     Formatting only — Full reformat from one-liner to multi-line.
+  DETAIL:          Fleet array initialisation split across lines for clarity.
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  PACKAGE: farming                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+FILE: src/farming/SmartFarm.java
+  CHANGE TYPE:     Formatting only — Full reformat from one-liner to multi-line.
+
+FILE: src/farming/InvalidWaterAmountException.java
+  CHANGE TYPE:     Formatting only — Full reformat from one-liner to multi-line.
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  PACKAGE: main                                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+FILE: src/main/InvalidChoiceException.java
+  CHANGE TYPE:     Formatting only — Full reformat from one-liner to multi-line.
+
+FILE: src/main/Main.java       — No changes made (already well formatted).
+FILE: src/main/CityService.java — No changes made (already well formatted).
+
+================================================================================
+  SUMMARY TABLE
+================================================================================
+
+  Category                        | Files Affected
+  --------------------------------|----------------------------------------------
+  New file created                | energy/EnergySource.java
+  Critical design fix             | energy/WindEnergy.java, energy/SolarEnergy.java
+  Integration fix (used objects)  | energy/EnergySystem.java
+  Bug fix (logic error)           | waste/WasteManager.java
+  Encapsulation fix               | home/SmartDevice.java + 3 subclasses
+  Best practice (interface type)  | waste/WasteManager.java
+  Thread join improvement         | weather/WeatherMonitor.java
+  Formatting (all packages)       | 28 files reformatted to multi-line style
+
+  Total files changed: 30 (+ 1 new file created)
+================================================================================
+
